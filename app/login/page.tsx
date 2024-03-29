@@ -5,29 +5,13 @@ import { useFormik } from "formik";
 import { Button } from "primereact/button";
 import { useState } from "react";
 import Link from "next/link";
+import * as Yup from "yup";
+import { useRouter } from "next/navigation";
 
-const validate = (values: any) => {
-  const errors = {
-    userEmail: "",
-    userPassword: "",
-  };
-  if (!values.userEmail) {
-    errors.userEmail = "Email is Required";
-  } else if (
-    !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(values.userEmail)
-  ) {
-    errors.userEmail = "Invalid email address";
-  }
-
-  if (!values.userPassword) {
-    errors.userPassword = "Password is Required";
-  }
-
-  return errors;
-};
-
+// https://www.youtube.com/watch?v=khGypss-RJs
 const Login = () => {
   const [inputType, setInputType] = useState<string>("password");
+  const router = useRouter();
   const showEyeIcon = inputType === "password";
   const hideEyeIcon = inputType === "text";
 
@@ -36,15 +20,49 @@ const Login = () => {
       userEmail: "",
       userPassword: "",
     },
-    validate,
-    onSubmit: (values, actions) => {
-      console.log("In onSubmit");
+    validationSchema: Yup.object({
+      userEmail: Yup.string()
+        .required("Email is Required")
+        .email("Invalid email address"),
+      userPassword: Yup.string().required("Password is Required"),
+    }),
+    onSubmit: (values, { setSubmitting }) => {
+      console.log("onSubmit", values);
       setTimeout(() => {
         alert(JSON.stringify(values, null, 2));
-        actions.setSubmitting(false);
+        setSubmitting(false);
       }, 1000);
+      const { userEmail, userPassword } = values;
+      postData("https://hyemwex4ti.us-east-1.awsapprunner.com/user/loginUser", {
+        email: userEmail,
+        password: userPassword,
+      }).then((data) => {
+        sessionStorage.setItem("accessToken", data.token);
+        sessionStorage.setItem("username", data.username);
+        sessionStorage.setItem("userEmail", data.email);
+        router.push("/home/dashboard");
+        console.log(data); // JSON data parsed by `data.json()` call
+      });
     },
   });
+
+  async function postData(url = "", data = {}) {
+    // Default options are marked with *
+    const response = await fetch(url, {
+      method: "POST", // *GET, POST, PUT, DELETE, etc.
+      mode: "cors", // no-cors, *cors, same-origin
+      cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+      credentials: "same-origin", // include, *same-origin, omit
+      headers: {
+        "Content-Type": "application/json",
+        // 'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      redirect: "follow", // manual, *follow, error
+      referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+      body: JSON.stringify(data), // body data type must match "Content-Type" header
+    });
+    return response.json(); // parses JSON response into native JavaScript objects
+  }
 
   return (
     <div className="landing-hero min-h-screen flex justify-content-center align-items-center min-w-screen">
@@ -64,17 +82,15 @@ const Login = () => {
               <InputText
                 id="userEmail"
                 name="userEmail"
+                value={formik.values.userEmail}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 className="w-full"
                 placeholder="Email"
                 aria-label="User Name"
-                onChange={(e) => {
-                  formik.setFieldValue("userEmail", e.target.value);
-                }}
-                onBlur={formik.handleBlur}
-                value={formik.values.userEmail}
               />
-              {formik.touched.userEmail && formik.errors.userEmail ? (
-                <small className="block p-error">
+              {formik.errors.userEmail && formik.touched.userEmail ? (
+                <small className="block p-error pt-2">
                   {formik.errors.userEmail}
                 </small>
               ) : null}
@@ -85,13 +101,11 @@ const Login = () => {
                 type={inputType}
                 className="w-full"
                 name="userPassword"
+                value={formik.values.userPassword}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 placeholder="Password"
                 aria-label="password"
-                onChange={(e) => {
-                  formik.setFieldValue("userPassword", e.target.value);
-                }}
-                onBlur={formik.handleBlur}
-                value={formik.values.userPassword}
               />
               <span className="p-input-icon-right">
                 {showEyeIcon && (
@@ -107,8 +121,8 @@ const Login = () => {
                   ></i>
                 )}
               </span>
-              {formik.touched.userPassword && formik.errors.userPassword ? (
-                <small className="block p-error">
+              {formik.errors.userPassword && formik.touched.userPassword ? (
+                <small className="block p-error pt-2">
                   {formik.errors.userPassword}
                 </small>
               ) : null}
