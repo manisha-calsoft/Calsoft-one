@@ -10,7 +10,7 @@ import "primereact/resources/themes/saga-blue/theme.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Next JS app",
+  title: "Calsoft-one",
   description: "next app with primereact and primeflex",
 };
 

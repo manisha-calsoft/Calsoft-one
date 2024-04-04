@@ -7,6 +7,7 @@ import { useState } from "react";
 import Link from "next/link";
 import * as Yup from "yup";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 // https://www.youtube.com/watch?v=khGypss-RJs
 const Login = () => {
@@ -26,42 +27,62 @@ const Login = () => {
         .email("Invalid email address"),
       userPassword: Yup.string().required("Password is Required"),
     }),
-    onSubmit: (values, { setSubmitting }) => {
+    onSubmit: async (values, { setSubmitting }) => {
       console.log("onSubmit", values);
       setTimeout(() => {
         alert(JSON.stringify(values, null, 2));
         setSubmitting(false);
       }, 1000);
       const { userEmail, userPassword } = values;
-      postData("https://hyemwex4ti.us-east-1.awsapprunner.com/user/loginUser", {
+
+      signIn("credentials", {
         email: userEmail,
         password: userPassword,
-      }).then((data) => {
-        sessionStorage.setItem("accessToken", data.token);
-        sessionStorage.setItem("username", data.username);
-        sessionStorage.setItem("userEmail", data.email);
-        router.push("/home/dashboard");
-        console.log(data); // JSON data parsed by `data.json()` call
+        redirect: false,
       });
+      // const response = await fetch(`api/auth/login`, {
+      //   method: "POST",
+      //   body: JSON.stringify({
+      //     email: userEmail,
+      //     password: userPassword,
+      //   }),
+      // });
+
+      // console.log({ response });
+      // postData("https://hyemwex4ti.us-east-1.awsapprunner.com/user/loginUser", {
+      //   email: userEmail,
+      //   password: userPassword,
+      // }).then((data) => {
+      //   sessionStorage.setItem("accessToken", data.token);
+      //   sessionStorage.setItem("username", data.username);
+      //   sessionStorage.setItem("userEmail", data.email);
+      //   router.push("/home/dashboard");
+      //   console.log(data); // JSON data parsed by `data.json()` call
+
+      //   const expirationTime = 1000;
+      //   localStorage.set("token", data.token);
+      //   setTimeout(() => {
+      //     localStorage.removeItem("token");
+      //   }, expirationTime);
+      // });
     },
   });
 
   async function postData(url = "", data = {}) {
     // Default options are marked with *
     const response = await fetch(url, {
-      method: "POST", // *GET, POST, PUT, DELETE, etc.
-      mode: "cors", // no-cors, *cors, same-origin
-      cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-      credentials: "same-origin", // include, *same-origin, omit
+      method: "POST",
+      mode: "cors",
+      cache: "no-cache",
+      credentials: "same-origin",
       headers: {
         "Content-Type": "application/json",
-        // 'Content-Type': 'application/x-www-form-urlencoded',
       },
-      redirect: "follow", // manual, *follow, error
-      referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-      body: JSON.stringify(data), // body data type must match "Content-Type" header
+      redirect: "follow",
+      referrerPolicy: "no-referrer",
+      body: JSON.stringify(data),
     });
-    return response.json(); // parses JSON response into native JavaScript objects
+    return response.json();
   }
 
   return (
